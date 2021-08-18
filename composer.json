@@ -1,0 +1,16 @@
+{
+    "name": "vsavritsky/bitrix-rest-api-smart-filter",
+    "description": "Библиотека в виде обертки над смарт фильтром битрикса",
+    "type": "library",
+    "require": {
+        "php": ">=7.1",
+        "vsavritsky/bitrix-filter-builder": "^0.0.2"
+    },
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "BitrixRestApiSmartFilter\\": "src"
+        }
+    }
+
+}

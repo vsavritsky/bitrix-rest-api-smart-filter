@@ -1,0 +1,50 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "43cf280a92665bb9be93c633276cab39",
+    "packages": [
+        {
+            "name": "vsavritsky/bitrix-filter-builder",
+            "version": "0.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/vsavritsky/bitrix-filter-builder.git",
+                "reference": "a7e8381959f5807712cda83220a6dda5ac9d8f58"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/vsavritsky/bitrix-filter-builder/zipball/a7e8381959f5807712cda83220a6dda5ac9d8f58",
+                "reference": "a7e8381959f5807712cda83220a6dda5ac9d8f58",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BitrixFilterBuilder\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "description": "Библиотека для простого создания фильтра",
+            "support": {
+                "issues": "https://github.com/vsavritsky/bitrix-filter-builder/issues",
+                "source": "https://github.com/vsavritsky/bitrix-filter-builder/tree/0.0.2"
+            },
+            "time": "2021-08-18T15:29:17+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.0.0"
+}
