@@ -7,6 +7,8 @@ abstract class ConfigFilterItem implements \JsonSerializable
     protected $name;
     protected $code;
     protected $displayType;
+    protected $propertyType;
+    protected $hint;
 
     /**
      * @return mixed
@@ -56,6 +58,38 @@ abstract class ConfigFilterItem implements \JsonSerializable
         $this->displayType = $displayType;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getPropertyType()
+    {
+        return $this->propertyType;
+    }
+
+    /**
+     * @param mixed $propertyType
+     */
+    public function setPropertyType($propertyType): void
+    {
+        $this->propertyType = $propertyType;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHint()
+    {
+        return $this->hint;
+    }
+
+    /**
+     * @param mixed $hint
+     */
+    public function setHint($hint): void
+    {
+        $this->hint = $hint;
+    }
+
     public abstract function getValues();
 
     public function jsonSerialize()
@@ -63,7 +97,9 @@ abstract class ConfigFilterItem implements \JsonSerializable
         return [
             'code' => $this->getCode(),
             'name' => $this->getName(),
+            'hint' => $this->getHint(),
             'displayType' => $this->getDisplayType(),
+            'propertyType' => $this->getPropertyType(),
             'values' => $this->getValues(),
         ];
     }

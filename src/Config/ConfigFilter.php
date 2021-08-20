@@ -11,6 +11,17 @@ class ConfigFilter implements \JsonSerializable
         $this->config[] = $configFilterItem;
     }
 
+    public function getConfigFilterItemByCode($code): ?ConfigFilterItem
+    {
+        foreach ($this->config as $item) {
+            if ($code == $item->getCode()) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
     public function jsonSerialize()
     {
         $result = [];

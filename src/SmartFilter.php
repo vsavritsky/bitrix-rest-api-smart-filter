@@ -9,12 +9,12 @@ use BitrixRestApiSmartFilter\Config\ConfigFilter;
 use BitrixRestApiSmartFilter\Config\ConfigFilterList;
 use BitrixRestApiSmartFilter\Config\ConfigFilterRange;
 use CCatalogGroup;
+use CFile;
+use CIBlockElement;
 use CIBlockPriceTools;
 use CIBlockProperty;
 use CIBlockPropertyEnum;
 use CIBlockSectionPropertyLink;
-use CIBlockElement;
-use CFile;
 
 class SmartFilter
 {
@@ -36,13 +36,9 @@ class SmartFilter
     public function convertFilter($sectionId, $filterData): Filter
     {
         $filter = Filter::create();
+        //$filter->eq('INCLUDE_SUBSECTIONS', 'Y');
 
-        $config = $this->getConfigFilter($sectionId, $filter);
-        foreach ($config as $key => $item) {
-            $config[$item['code']] = $item;
-        }
-
-        $filter->eq('INCLUDE_SUBSECTIONS', 'Y');
+        $configFilter = $this->getConfigFilter($sectionId, $filter);
 
         foreach ($filterData as $property => $value) {
             if ($property == 'PRICE_MAX') {
@@ -51,14 +47,17 @@ class SmartFilter
                 $filter->gte('PRICE', $value);
             } else {
                 if (is_array($value)) {
+                    $values = [];
                     foreach ($value as $key => $valueItem) {
-                        if ($config[$property]['propertyType'] == 'S') {
+                        $configFilterItem = $configFilter->getConfigFilterItemByCode($property);
+                        if ($configFilterItem->getPropertyType() == 'S') {
                             $valueItem = trim($this->facet->lookupDictionaryValue($valueItem));
                         }
-                        $filter->eq($key, $valueItem);
+                        $values[] = $valueItem;
                     }
+                    $filter->in('PROPERTY_'.$property, $values);
                 } else {
-                    $filter->eq('PROPERTY_' . $property, $value);
+                    $filter->eq('PROPERTY_'.$property, $value);
                 }
             }
         }
@@ -66,7 +65,7 @@ class SmartFilter
         return $filter;
     }
 
-    public function getConfigFilter($sectionId, Filter $filter)
+    public function getConfigFilter($sectionId, Filter $filter): ConfigFilter
     {
         $prices = CIBlockPriceTools::GetCatalogPrices($this->iblockId, ['BASE']);
         $this->facet->setPrices($prices);
@@ -132,12 +131,13 @@ class SmartFilter
 
         $configFilter = new ConfigFilter();
         foreach ($result as $key => $value) {
-            if (isset($value['values']['min']) || isset($value['values']['max']))
-            {
+            if (isset($value['values']['min']) || isset($value['values']['max'])) {
                 $filterRange = new ConfigFilterRange();
                 $filterRange->setCode($key);
                 $filterRange->setName($value['name']);
                 $filterRange->setDisplayType('R');
+                $filterRange->setPropertyType($value['propertyType']);
+                $filterRange->setHint($value['hint']);
                 $filterRange->setMin((float)$value['values']['min']);
                 $filterRange->setMax((float)$value['values']['max']);
                 $configFilter->addFilterItem($filterRange);
@@ -145,6 +145,8 @@ class SmartFilter
                 $filterList = new ConfigFilterList();
                 $filterList->setCode($value['code']);
                 $filterList->setName($value['name']);
+                $filterList->setHint($value['hint']);
+                $filterList->setPropertyType($value['propertyType']);
                 $filterList->setDisplayType($value['displayType']);
                 $filterList->setValues(array_values($value['values']));
                 $configFilter->addFilterItem($filterList);
