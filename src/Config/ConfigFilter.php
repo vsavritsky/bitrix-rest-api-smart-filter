@@ -1,18 +1,23 @@
 <?php
 
-namespace BitrixRestApiSmartFilter;
+namespace BitrixRestApiSmartFilter\Config;
 
-class ConfigFilter
+class ConfigFilter implements \JsonSerializable
 {
     protected $config = [];
 
-    public function addList()
+    public function addFilterItem(ConfigFilterItem $configFilterItem)
     {
-        $this->config[$key] = $values;
+        $this->config[] = $configFilterItem;
     }
 
-    public function addRange($key, $min, $max)
+    public function jsonSerialize()
     {
-        $this->config[$key] = [$min, $max];
+        $result = [];
+        foreach ($this->config as $configFilterItem) {
+            $result[$configFilterItem->getCode()] = $configFilterItem;
+        }
+
+        return $result;
     }
 }

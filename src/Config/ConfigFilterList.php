@@ -1,18 +1,18 @@
 <?php
 
-namespace BitrixRestApiSmartFilter;
+namespace BitrixRestApiSmartFilter\Config;
 
-class ConfigFilterList
+class ConfigFilterList extends ConfigFilterItem
 {
     protected $values = [];
 
-    public function addList()
+    public function setValues($values)
     {
-        $this->config[$key] = $values;
+        $this->values = $values;
     }
 
-    public function addRange($key, $min, $max)
+    public function getValues()
     {
-        $this->config[$key] = [$min, $max];
+        return $this->values;
     }
 }

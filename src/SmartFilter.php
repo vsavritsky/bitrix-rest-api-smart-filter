@@ -5,11 +5,16 @@ namespace BitrixRestApiSmartFilter;
 use Bitrix\Iblock\PropertyIndex\Facet;
 use Bitrix\Iblock\PropertyIndex\Storage;
 use BitrixFilterBuilder\Filter;
+use BitrixRestApiSmartFilter\Config\ConfigFilter;
+use BitrixRestApiSmartFilter\Config\ConfigFilterList;
+use BitrixRestApiSmartFilter\Config\ConfigFilterRange;
 use CCatalogGroup;
 use CIBlockPriceTools;
 use CIBlockProperty;
 use CIBlockPropertyEnum;
 use CIBlockSectionPropertyLink;
+use CIBlockElement;
+use CFile;
 
 class SmartFilter
 {
@@ -28,11 +33,11 @@ class SmartFilter
         $this->facet = new Facet($this->iblockId);
     }
 
-    public function convertFilter($sectionId, $filterData) : Filter
+    public function convertFilter($sectionId, $filterData): Filter
     {
         $filter = Filter::create();
 
-        $config = $this->filter($sectionId, []);
+        $config = $this->getConfigFilter($sectionId, $filter);
         foreach ($config as $key => $item) {
             $config[$item['code']] = $item;
         }
@@ -61,9 +66,9 @@ class SmartFilter
         return $filter;
     }
 
-    public function getConfigFilter($sectionId, Filter $filter) : ConfigFilter
+    public function getConfigFilter($sectionId, Filter $filter)
     {
-        $prices = CIBlockPriceTools::GetCatalogPrices(1, ['BASE']);
+        $prices = CIBlockPriceTools::GetCatalogPrices($this->iblockId, ['BASE']);
         $this->facet->setPrices($prices);
         $this->facet->setSectionId($sectionId);
 
@@ -89,6 +94,7 @@ class SmartFilter
                 $rowData['PID'] = $PID;
                 $tmpProperty[] = $rowData;
                 $item = $result[$PID];
+                $arUserType = CIBlockProperty::GetUserType($item['userType']);
 
                 if ($item["propertyType"] == "S") {
                     $dictionaryID[] = $rowData["VALUE"];
@@ -102,11 +108,11 @@ class SmartFilter
                     $sectionDictionary[] = $rowData['VALUE'];
                 }
 
-                if ($item['USER_TYPE'] == 'directory' && isset($arUserType['GetExtendedValue'])) {
-                    $tableName = $item['USER_TYPE_SETTINGS']['TABLE_NAME'];
+                if ($item['userType'] == 'directory' && isset($arUserType['GetExtendedValue'])) {
+                    $tableName = $item['userTypeSettings']['TABLE_NAME'];
                     $directoryPredict[$tableName]['PROPERTY'] = array(
-                        'PID' => $item['ID'],
-                        'USER_TYPE_SETTINGS' => $item['USER_TYPE_SETTINGS'],
+                        'PID' => $item['id'],
+                        'USER_TYPE_SETTINGS' => $item['userTypeSettings'],
                         'GetExtendedValue' => $arUserType['GetExtendedValue'],
                     );
                     $directoryPredict[$tableName]['VALUE'][] = $rowData["VALUE"];
@@ -125,20 +131,27 @@ class SmartFilter
         $this->processProperties($result, $tmpProperty, $dictionaryID, $directoryPredict);
 
         $configFilter = new ConfigFilter();
-
-        foreach ($result['filter'] as $key => $value) {
-            if (isset($value['values']['min']) || isset($value['values']['max'])) {
-                $configFilter->addRange($key, $value['values']['min'], $value['values']['max']);
+        foreach ($result as $key => $value) {
+            if (isset($value['values']['min']) || isset($value['values']['max']))
+            {
+                $filterRange = new ConfigFilterRange();
+                $filterRange->setCode($key);
+                $filterRange->setName($value['name']);
+                $filterRange->setDisplayType('R');
+                $filterRange->setMin((float)$value['values']['min']);
+                $filterRange->setMax((float)$value['values']['max']);
+                $configFilter->addFilterItem($filterRange);
             } else {
-                $configFilter->addList($key, $value['values']);
-            }
-
-            if (isset($result['filter'][$key]['values']) && !isset($result['filter'][$key]['values']['min'])) {
-                $result['filter'][$key]['values'] = array_values($value['values']);
+                $filterList = new ConfigFilterList();
+                $filterList->setCode($value['code']);
+                $filterList->setName($value['name']);
+                $filterList->setDisplayType($value['displayType']);
+                $filterList->setValues(array_values($value['values']));
+                $configFilter->addFilterItem($filterList);
             }
         }
 
-        return $result;
+        return $configFilter;
     }
 
     public function predictHlFetch($userType, $valueIDs)
@@ -172,6 +185,7 @@ class SmartFilter
                     if (isset($lookupDictionary[$item]))
                         $values[] = $lookupDictionary[$item];
                 }
+
                 if (!empty($values))
                     $this->predictHlFetch($directory['PROPERTY'], $values);
                 unset($values);
@@ -181,6 +195,7 @@ class SmartFilter
 
         foreach ($elements as $row) {
             $PID = $row['PID'];
+
             if ($resultItem[$PID]["propertyType"] == "N") {
                 $this->fillItemValues($resultItem[$PID], $row["MIN_VALUE_NUM"]);
                 $this->fillItemValues($resultItem[$PID], $row["MAX_VALUE_NUM"]);
@@ -416,7 +431,8 @@ class SmartFilter
         ];
 
         if ($file_id) {
-            $resultItem["values"][$htmlKey]['file'] = CFile::GetFileArray($file_id);
+            $file = CFile::GetFileArray($file_id);
+            $resultItem["values"][$htmlKey]['picture'] = $file['SRC'];
         }
 
         return $htmlKey;
@@ -475,6 +491,8 @@ class SmartFilter
                     "propertyType" => $arProperty["PROPERTY_TYPE"],
                     "displayType" => $arLink["DISPLAY_TYPE"],
                     "userType" => $arProperty["USER_TYPE"],
+                    "userTypeSettings" => $arProperty["USER_TYPE_SETTINGS"],
+                    "displayExpand" => $arLink["DISPLAY_EXPANDED"],
                     "hint" => $arLink["FILTER_HINT"],
                     "values" => [],
                 );
