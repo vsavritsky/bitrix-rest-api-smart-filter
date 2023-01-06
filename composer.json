@@ -3,8 +3,8 @@
     "description": "Библиотека в виде обертки над смарт фильтром битрикса",
     "type": "library",
     "require": {
-        "php": ">=7.1",
-        "vsavritsky/bitrix-filter-builder": "^0.0.2"
+        "php": ">=7.4",
+        "vsavritsky/bitrix-filter-builder": "^0.0.3"
     },
     "minimum-stability": "stable",
     "autoload": {

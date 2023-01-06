@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "43cf280a92665bb9be93c633276cab39",
+    "content-hash": "991199e291ce9a6030f692ca4799a684",
     "packages": [
         {
             "name": "vsavritsky/bitrix-filter-builder",
-            "version": "0.0.2",
+            "version": "0.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vsavritsky/bitrix-filter-builder.git",
-                "reference": "a7e8381959f5807712cda83220a6dda5ac9d8f58"
+                "reference": "20b1bb0e211a3424cd4c8dbb9bb21d65856cb5df"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vsavritsky/bitrix-filter-builder/zipball/a7e8381959f5807712cda83220a6dda5ac9d8f58",
-                "reference": "a7e8381959f5807712cda83220a6dda5ac9d8f58",
+                "url": "https://api.github.com/repos/vsavritsky/bitrix-filter-builder/zipball/20b1bb0e211a3424cd4c8dbb9bb21d65856cb5df",
+                "reference": "20b1bb0e211a3424cd4c8dbb9bb21d65856cb5df",
                 "shasum": ""
             },
             "require": {
@@ -33,9 +33,9 @@
             "description": "Библиотека для простого создания фильтра",
             "support": {
                 "issues": "https://github.com/vsavritsky/bitrix-filter-builder/issues",
-                "source": "https://github.com/vsavritsky/bitrix-filter-builder/tree/0.0.2"
+                "source": "https://github.com/vsavritsky/bitrix-filter-builder/tree/0.0.3"
             },
-            "time": "2021-08-18T15:29:17+00:00"
+            "time": "2022-05-11T17:46:25+00:00"
         }
     ],
     "packages-dev": [],
@@ -44,7 +44,9 @@
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "php": ">=7.4"
+    },
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.3.0"
 }
