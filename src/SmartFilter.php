@@ -222,11 +222,13 @@ class SmartFilter
                 }
             }
         }
+
         foreach ($resultItem as &$item) {
-            if (count($item["values"]) > 1) {
-                uasort($item["values"], static function ($a, $b) {
-                    return ($a["value"] > $b["value"]) ? 1 : -1;
-                });
+            $firstValue = reset($item["values"]);
+            if (count($item["values"]) > 1 && isset($firstValue['value'])) {
+               uasort($item["values"], static function ($a, $b) {
+                   return ($a["value"] > $b["value"]) ? 1 : -1;
+               });
             }
         }
     }
