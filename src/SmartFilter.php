@@ -55,9 +55,9 @@ class SmartFilter
                         }
                         $values[] = $valueItem;
                     }
-                    $filter->in('PROPERTY_'.$property, $values);
+                    $filter->in('PROPERTY_' . $property, $values);
                 } else {
-                    $filter->eq('PROPERTY_'.$property, $value);
+                    $filter->eq('PROPERTY_' . $property, $value);
                 }
             }
         }
@@ -133,7 +133,7 @@ class SmartFilter
         foreach ($result as $key => $value) {
             if (isset($value['values']['min']) || isset($value['values']['max'])) {
                 $filterRange = new ConfigFilterRange();
-                $filterRange->setCode($key);
+                $filterRange->setCode($value['code']);
                 $filterRange->setName($value['name']);
                 $filterRange->setDisplayType('R');
                 $filterRange->setPropertyType($value['propertyType']);
@@ -199,6 +199,7 @@ class SmartFilter
             $PID = $row['PID'];
 
             if ($resultItem[$PID]["propertyType"] == "N") {
+                var_dump($row);
                 $this->fillItemValues($resultItem[$PID], $row["MIN_VALUE_NUM"]);
                 $this->fillItemValues($resultItem[$PID], $row["MAX_VALUE_NUM"]);
             } elseif ($resultItem[$PID]["displayType"] == "U") {
@@ -226,14 +227,14 @@ class SmartFilter
         foreach ($resultItem as &$item) {
             $firstValue = reset($item["values"]);
             if (count($item["values"]) > 1 && isset($firstValue['value'])) {
-               uasort($item["values"], static function ($a, $b) {
-                   return ($a["value"] > $b["value"]) ? 1 : -1;
-               });
+                uasort($item["values"], static function ($a, $b) {
+                    return ($a["value"] > $b["value"]) ? 1 : -1;
+                });
             }
         }
     }
 
-    public function fillItemValues(&$resultItem, $arProperty, $flag = null)
+    public function fillItemValues(&$resultItem, $arProperty)
     {
         if (is_array($arProperty)) {
             if (isset($arProperty["price"])) {
@@ -259,19 +260,13 @@ class SmartFilter
                 return null;
             }
 
-            if (
-                !isset($resultItem["VALUES"]["min"])
-                || !array_key_exists("VALUE", $resultItem["VALUES"]["min"])
-                || doubleval($resultItem["VALUES"]["min"]) > $convertKey
-            )
-                $resultItem["VALUES"]["min"] = preg_replace("/\\.0+\$/", "", $key);
 
-            if (
-                !isset($resultItem["VALUES"]["max"])
-                || !array_key_exists("VALUE", $resultItem["VALUES"]["max"])
-                || doubleval($resultItem["VALUES"]["max"]) < $convertKey
-            )
-                $resultItem["VALUES"]["max"] = preg_replace("/\\.0+\$/", "", $key);
+            if (!isset($resultItem["values"]["min"])) {
+                $resultItem["values"]["min"] = preg_replace("/\\.0+\$/", "", $key);
+
+            } elseif (!isset($resultItem["values"]["max"])) {
+                $resultItem["values"]["max"] = preg_replace("/\\.0+\$/", "", $key);
+            }
 
             return null;
         } elseif ($arProperty["DISPLAY_TYPE"] == "U") {
@@ -285,18 +280,18 @@ class SmartFilter
             }
 
             if (
-                !isset($resultItem["VALUES"]["min"])
-                || !array_key_exists("VALUE", $resultItem["VALUES"]["min"])
-                || $resultItem["VALUES"]["min"] > $timestamp
+                !isset($resultItem["values"]["min"])
+                || !array_key_exists("VALUE", $resultItem["values"]["min"])
+                || $resultItem["values"]["min"] > $timestamp
             )
-                $resultItem["VALUES"]["min"] = $timestamp;
+                $resultItem["values"]["min"] = $timestamp;
 
             if (
-                !isset($resultItem["VALUES"]["max"])
-                || !array_key_exists("VALUE", $resultItem["VALUES"]["max"])
-                || $resultItem["VALUES"]["max"] < $timestamp
+                !isset($resultItem["values"]["max"])
+                || !array_key_exists("VALUE", $resultItem["values"]["max"])
+                || $resultItem["values"]["max"] < $timestamp
             )
-                $resultItem["VALUES"]["max"] = $timestamp;
+                $resultItem["values"]["max"] = $timestamp;
 
             return null;
         } elseif ($PROPERTY_TYPE == "E" && $key <= 0) {
@@ -507,14 +502,14 @@ class SmartFilter
                 ) {
                     $minID = $this->SAFE_FILTER_NAME . '_' . $arProperty['ID'] . '_MIN';
                     $maxID = $this->SAFE_FILTER_NAME . '_' . $arProperty['ID'] . '_MAX';
-                    $items[$arProperty["ID"]]["values"] = array(
-                        "min" => array(
-                            "CONTROL_NAME" => $minID,
-                        ),
-                        "max" => array(
-                            "CONTROL_NAME" => $maxID,
-                        ),
-                    );
+                    //$items[$arProperty["ID"]]["values"] = array(
+                    //    "min" => array(
+                    //        "CONTROL_NAME" => $minID,
+                    //    ),
+                    //    "max" => array(
+                    //        "CONTROL_NAME" => $maxID,
+                    //    ),
+                    //);
                 }
             }
         }
