@@ -199,7 +199,6 @@ class SmartFilter
             $PID = $row['PID'];
 
             if ($resultItem[$PID]["propertyType"] == "N") {
-                var_dump($row);
                 $this->fillItemValues($resultItem[$PID], $row["MIN_VALUE_NUM"]);
                 $this->fillItemValues($resultItem[$PID], $row["MAX_VALUE_NUM"]);
             } elseif ($resultItem[$PID]["displayType"] == "U") {
