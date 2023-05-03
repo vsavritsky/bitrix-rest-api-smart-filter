@@ -551,6 +551,7 @@ class SmartFilter
         $priceValue = $arElement["MIN_VALUE_NUM"];
         if (
             !isset($resultItem["values"]["min"])
+            || $resultItem["values"]["min"] = null
             || $resultItem["values"]["min"] > $priceValue
         ) {
             $resultItem["values"]["min"] = $priceValue;
@@ -559,6 +560,7 @@ class SmartFilter
         $priceValue = $arElement["MAX_VALUE_NUM"];
         if (
             !isset($resultItem["values"]["max"])
+            || $resultItem["values"]["max"] = null
             || $resultItem["values"]["max"] < $priceValue
         ) {
             $resultItem["values"]["max"] = $priceValue;
