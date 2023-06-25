@@ -41,24 +41,26 @@ class SmartFilter
         $configFilter = $this->getConfigFilter($sectionId, $filter);
 
         foreach ($filterData as $property => $value) {
-            if ($property == 'PRICE_MAX') {
-                $filter->lte('PRICE', $value);
-            } elseif ($property == 'PRICE_MIN') {
-                $filter->gte('PRICE', $value);
-            } else {
-                if (is_array($value)) {
-                    $values = [];
-                    foreach ($value as $key => $valueItem) {
-                        $configFilterItem = $configFilter->getConfigFilterItemByCode($property);
-                        if ($configFilterItem->getPropertyType() == 'S') {
-                            $valueItem = trim($this->facet->lookupDictionaryValue($valueItem));
-                        }
-                        $values[] = $valueItem;
+            $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $code));
+
+            if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
+                $filter->between($code, $userFilterValue[0], $userFilterValue[1]);
+            } else if (is_array($value)) {
+                $values = [];
+                foreach ($value as $key => $valueItem) {
+                    $configFilterItem = $configFilter->getConfigFilterItemByCode($property);
+                    if ($configFilterItem->getPropertyType() == 'S') {
+                        $valueItem = trim($this->facet->lookupDictionaryValue($valueItem));
                     }
-                    $filter->in('PROPERTY_' . $property, $values);
-                } else {
-                    $filter->eq('PROPERTY_' . $property, $value);
+                    $values[] = $valueItem;
                 }
+                $filter->in('PROPERTY_' . $property, $values);
+            } else {
+                $configFilterItem = $configFilter->getConfigFilterItemByCode($property);
+                if ($configFilterItem->getPropertyType() == 'S') {
+                    $value = trim($this->facet->lookupDictionaryValue($value));
+                }
+                $filter->eq('PROPERTY_' . $property, $value);
             }
         }
 
@@ -327,8 +329,8 @@ class SmartFilter
             return $htmlKey;
         }
 
-        $file_id = null;
-        $url_id = null;
+        $fileId = null;
+        $urlId = null;
 
         switch ($PROPERTY_TYPE) {
             case "L":
@@ -336,7 +338,7 @@ class SmartFilter
                 if ($enum) {
                     $value = $enum["VALUE"];
                     $sort = $enum["SORT"];
-                    $url_id = toLower($enum["XML_ID"]);
+                    $urlId = toLower($enum["XML_ID"]);
                 } else {
                     return null;
                 }
@@ -352,9 +354,9 @@ class SmartFilter
                 $value = $this->cache[$PROPERTY_TYPE][$key]["NAME"];
                 $sort = $this->cache[$PROPERTY_TYPE][$key]["SORT"];
                 if ($this->cache[$PROPERTY_TYPE][$key]["CODE"])
-                    $url_id = toLower($this->cache[$PROPERTY_TYPE][$key]["CODE"]);
+                    $urlId = toLower($this->cache[$PROPERTY_TYPE][$key]["CODE"]);
                 else
-                    $url_id = toLower($value);
+                    $urlId = toLower($value);
                 break;
             case "G":
                 if (!isset($this->cache[$PROPERTY_TYPE][$key])) {
@@ -367,9 +369,9 @@ class SmartFilter
                 $value = $this->cache[$PROPERTY_TYPE][$key]['DEPTH_NAME'];
                 $sort = $this->cache[$PROPERTY_TYPE][$key]["LEFT_MARGIN"];
                 if ($this->cache[$PROPERTY_TYPE][$key]["CODE"])
-                    $url_id = toLower($this->cache[$PROPERTY_TYPE][$key]["CODE"]);
+                    $urlId = toLower($this->cache[$PROPERTY_TYPE][$key]["CODE"]);
                 else
-                    $url_id = toLower($value);
+                    $urlId = toLower($value);
                 break;
             case "U":
                 if (!isset($this->cache[$PROPERTY_ID]))
@@ -388,7 +390,7 @@ class SmartFilter
 
                 $value = $this->cache[$PROPERTY_ID][$key];
                 $sort = 0;
-                $url_id = toLower($value);
+                $urlId = toLower($value);
                 break;
             case "Ux":
                 if (!isset($this->cache[$PROPERTY_ID]))
@@ -406,9 +408,9 @@ class SmartFilter
 
                 if ($this->cache[$PROPERTY_ID][$key]) {
                     $value = $this->cache[$PROPERTY_ID][$key]['VALUE'];
-                    $file_id = $this->cache[$PROPERTY_ID][$key]['FILE_ID'];
+                    $fileId = $this->cache[$PROPERTY_ID][$key]['FILE_ID'];
                     $sort = (isset($this->cache[$PROPERTY_ID][$key]['SORT']) ? $this->cache[$PROPERTY_ID][$key]['SORT'] : 0);
-                    $url_id = toLower($this->cache[$PROPERTY_ID][$key]['UF_XML_ID']);
+                    $urlId = toLower($this->cache[$PROPERTY_ID][$key]['UF_XML_ID']);
                 } else {
                     return null;
                 }
@@ -416,7 +418,7 @@ class SmartFilter
             default:
                 $value = $key;
                 $sort = 0;
-                $url_id = toLower($value);
+                $urlId = toLower($value);
                 break;
         }
 
@@ -425,11 +427,12 @@ class SmartFilter
         $sort = (int)$sort;
         $resultItem["values"][$htmlKey] = [
             "htmlValue" => "Y",
-            "value" => $safeValue
+            "value" => $safeValue,
+            'urlId' => $urlId,
         ];
 
-        if ($file_id) {
-            $file = CFile::GetFileArray($file_id);
+        if ($fileId) {
+            $file = CFile::GetFileArray($fileId);
             $resultItem["values"][$htmlKey]['picture'] = $file['SRC'];
         }
 
@@ -518,6 +521,10 @@ class SmartFilter
     public function getPriceItems()
     {
         $items = [];
+        if (!class_exists(CCatalogGroup::class)) {
+            return $items;
+        }
+
         $rsPrice = CCatalogGroup::GetList(
             array('SORT' => 'ASC', 'ID' => 'ASC'),
             array('=NAME' => 'BASE'),
@@ -551,7 +558,6 @@ class SmartFilter
         $priceValue = $arElement["MIN_VALUE_NUM"];
         if (
             !isset($resultItem["values"]["min"])
-            || $resultItem["values"]["min"] = null
             || $resultItem["values"]["min"] > $priceValue
         ) {
             $resultItem["values"]["min"] = $priceValue;
@@ -560,7 +566,6 @@ class SmartFilter
         $priceValue = $arElement["MAX_VALUE_NUM"];
         if (
             !isset($resultItem["values"]["max"])
-            || $resultItem["values"]["max"] = null
             || $resultItem["values"]["max"] < $priceValue
         ) {
             $resultItem["values"]["max"] = $priceValue;
