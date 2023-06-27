@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "991199e291ce9a6030f692ca4799a684",
+    "content-hash": "0eed4384e488bd1eda460527697d6a7d",
     "packages": [
         {
             "name": "vsavritsky/bitrix-filter-builder",
@@ -36,6 +36,38 @@
                 "source": "https://github.com/vsavritsky/bitrix-filter-builder/tree/0.0.3"
             },
             "time": "2022-05-11T17:46:25+00:00"
+        },
+        {
+            "name": "vsavritsky/bitrix-models",
+            "version": "0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/vsavritsky/bitrix-models.git",
+                "reference": "351619cde406ee933ef7c0249fd072b176965150"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/vsavritsky/bitrix-models/zipball/351619cde406ee933ef7c0249fd072b176965150",
+                "reference": "351619cde406ee933ef7c0249fd072b176965150",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4",
+                "vsavritsky/bitrix-filter-builder": "^0.0.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BitrixModels\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "description": "Библиотека для работы с инфоблоками, хайлоадами и т.п как сущностями",
+            "support": {
+                "issues": "https://github.com/vsavritsky/bitrix-models/issues",
+                "source": "https://github.com/vsavritsky/bitrix-models/tree/0.1.0"
+            },
+            "time": "2023-04-27T18:40:07+00:00"
         }
     ],
     "packages-dev": [],

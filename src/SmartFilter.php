@@ -4,7 +4,7 @@ namespace BitrixRestApiSmartFilter;
 
 use Bitrix\Iblock\PropertyIndex\Facet;
 use Bitrix\Iblock\PropertyIndex\Storage;
-use BitrixFilterBuilder\Filter;
+use BitrixModels\Model\Filter;
 use BitrixRestApiSmartFilter\Config\ConfigFilter;
 use BitrixRestApiSmartFilter\Config\ConfigFilterList;
 use BitrixRestApiSmartFilter\Config\ConfigFilterRange;
@@ -33,34 +33,52 @@ class SmartFilter
         $this->facet = new Facet($this->iblockId);
     }
 
-    public function convertFilter($sectionId, $filterData): Filter
+    public function convertFilter($sectionId, $filterData, Filter $filter = null): Filter
     {
-        $filter = Filter::create();
-        //$filter->eq('INCLUDE_SUBSECTIONS', 'Y');
+        if (!$filter) {
+            $filter = Filter::create();
+        }
 
         $configFilter = $this->getConfigFilter($sectionId, $filter);
+        $userFilter = Filter::create();
 
         foreach ($filterData as $property => $value) {
-            $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $code));
-
-            if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
-                $filter->between($code, $userFilterValue[0], $userFilterValue[1]);
-            } else if (is_array($value)) {
+            if (is_array($value)) {
                 $values = [];
                 foreach ($value as $key => $valueItem) {
+                    $foundValueItem = null;
                     $configFilterItem = $configFilter->getConfigFilterItemByCode($property);
                     if ($configFilterItem->getPropertyType() == 'S') {
-                        $valueItem = trim($this->facet->lookupDictionaryValue($valueItem));
+                        $foundValueItem = trim($this->facet->lookupDictionaryValue($valueItem));
+
+                        if ($foundValueItem) {
+                            $values[] = $foundValueItem;
+                        }
                     }
-                    $values[] = $valueItem;
+
+                    if (!$foundValueItem) {
+                        $values[] = $valueItem;
+                    }
                 }
-                $filter->in('PROPERTY_' . $property, $values);
+                $userFilter->in('PROPERTY_' . $property, $values);
             } else {
                 $configFilterItem = $configFilter->getConfigFilterItemByCode($property);
                 if ($configFilterItem->getPropertyType() == 'S') {
                     $value = trim($this->facet->lookupDictionaryValue($value));
                 }
-                $filter->eq('PROPERTY_' . $property, $value);
+                $userFilter->eq('PROPERTY_' . $property, $value);
+            }
+        }
+
+        foreach ($userFilter->getResult() as $property => $userFilterValue) {
+            $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
+
+            if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
+                $filter->between($property, $userFilterValue[0], $userFilterValue[1]);
+            } elseif (is_array($userFilterValue)) {
+                $filter->in($property, $userFilterValue);
+            } else {
+                $filter->eq($property, $userFilterValue);
             }
         }
 
