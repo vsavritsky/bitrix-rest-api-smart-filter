@@ -43,29 +43,15 @@ class SmartFilter
         $userFilter = Filter::create();
 
         foreach ($filterData as $property => $value) {
+            //$configFilterItem = $configFilter->getConfigFilterItemByCode($property);
+
             if (is_array($value)) {
                 $values = [];
                 foreach ($value as $key => $valueItem) {
-                    $foundValueItem = null;
-                    $configFilterItem = $configFilter->getConfigFilterItemByCode($property);
-                    if ($configFilterItem->getPropertyType() == 'S') {
-                        $foundValueItem = trim($this->facet->lookupDictionaryValue($valueItem));
-
-                        if ($foundValueItem) {
-                            $values[] = $foundValueItem;
-                        }
-                    }
-
-                    if (!$foundValueItem) {
-                        $values[] = $valueItem;
-                    }
+                    $values[] = $valueItem;
                 }
                 $userFilter->in('PROPERTY_' . $property, $values);
             } else {
-                $configFilterItem = $configFilter->getConfigFilterItemByCode($property);
-                if ($configFilterItem->getPropertyType() == 'S') {
-                    $value = trim($this->facet->lookupDictionaryValue($value));
-                }
                 $userFilter->eq('PROPERTY_' . $property, $value);
             }
         }
