@@ -15,6 +15,7 @@ use CIBlockPriceTools;
 use CIBlockProperty;
 use CIBlockPropertyEnum;
 use CIBlockSectionPropertyLink;
+use CCatalogSKU;
 
 class SmartFilter
 {
@@ -22,6 +23,8 @@ class SmartFilter
     public $facet = null;
 
     protected $iblockId;
+    protected $skuIblockId;
+    protected $skuPropertyId;
 
     protected $sectionId;
 
@@ -30,6 +33,12 @@ class SmartFilter
     public function __construct($iblockId)
     {
         $this->iblockId = $iblockId;
+        $arCatalog = CCatalogSKU::GetInfoByProductIBlock($this->iblockId);
+        if (!empty($arCatalog))
+        {
+            $this->skuIblockId = $arCatalog["IBLOCK_ID"];
+            $this->skuPropertyId = $arCatalog["SKU_PROPERTY_ID"];
+        }
         $this->facet = new Facet($this->iblockId);
     }
 
@@ -467,6 +476,13 @@ class SmartFilter
     public function getResultItems()
     {
         $items = $this->getIBlockItems($this->iblockId);
+
+        if ($this->skuIblockId) {
+            foreach ($this->getIBlockItems($this->skuIblockId) as $PID => $arItem) {
+                $items[$PID] = $arItem;
+            }
+        }
+
         foreach ($this->getPriceItems() as $PID => $arItem) {
             $items[$PID] = $arItem;
         }
@@ -474,11 +490,11 @@ class SmartFilter
         return $items;
     }
 
-    public function getIBlockItems($IBLOCK_ID)
+    public function getIBlockItems($iblockId)
     {
         $items = [];
 
-        foreach (CIBlockSectionPropertyLink::GetArray($this->iblockId, $this->sectionId) as $PID => $arLink) {
+        foreach (CIBlockSectionPropertyLink::GetArray($iblockId, $this->sectionId) as $PID => $arLink) {
             if ($arLink["SMART_FILTER"] !== "Y")
                 continue;
 
@@ -487,6 +503,7 @@ class SmartFilter
 
             $rsProperty = CIBlockProperty::GetByID($PID);
             $arProperty = $rsProperty->Fetch();
+
             if ($arProperty) {
 
                 $items[$arProperty["ID"]] = array(
