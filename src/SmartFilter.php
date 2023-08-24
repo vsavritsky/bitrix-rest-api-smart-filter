@@ -34,8 +34,7 @@ class SmartFilter
     {
         $this->iblockId = $iblockId;
         $arCatalog = CCatalogSKU::GetInfoByProductIBlock($this->iblockId);
-        if (!empty($arCatalog))
-        {
+        if (!empty($arCatalog)) {
             $this->skuIblockId = $arCatalog["IBLOCK_ID"];
             $this->skuPropertyId = $arCatalog["SKU_PROPERTY_ID"];
         }
@@ -52,28 +51,55 @@ class SmartFilter
         $userFilter = Filter::create();
 
         foreach ($filterData as $property => $value) {
-            //$configFilterItem = $configFilter->getConfigFilterItemByCode($property);
-
             if (is_array($value)) {
                 $values = [];
                 foreach ($value as $key => $valueItem) {
                     $values[] = $valueItem;
                 }
-                $userFilter->in('PROPERTY_' . $property, $values);
+
+                if (strpos($property, 'CATALOG_PRICE') !== false) {
+                    $userFilter->in($property, $values);
+                } else {
+                    $userFilter->in('PROPERTY_' . $property, $values);
+                }
             } else {
                 $userFilter->eq('PROPERTY_' . $property, $value);
             }
         }
 
-        foreach ($userFilter->getResult() as $property => $userFilterValue) {
+
+        $skuFilter = (new Filter())->eq('IBLOCK_ID', $this->skuIblockId);
+        $filterResultList = $userFilter->getResult();
+
+        foreach ($filterResultList as $property => $userFilterValue) {
             $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
 
-            if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
-                $filter->between($property, $userFilterValue[0], $userFilterValue[1]);
-            } elseif (is_array($userFilterValue)) {
-                $filter->in($property, $userFilterValue);
-            } else {
-                $filter->eq($property, $userFilterValue);
+            if ($fieldConfig->getIblockId() == $this->skuIblockId) {
+                if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
+                    $skuFilter->between($property, $userFilterValue[0], $userFilterValue[1]);
+                } elseif (is_array($userFilterValue)) {
+                    $skuFilter->in($property, $userFilterValue);
+                } else {
+                    $skuFilter->eq($property, $userFilterValue);
+                }
+            }
+        }
+
+        if (count($skuFilter->getResult()) > 1) {
+            $filter->eq('ID', CIBlockElement::SubQuery('PROPERTY_CML2_LINK', $skuFilter->getResult()));
+        }
+
+        foreach ($filterResultList as $property => $userFilterValue) {
+            $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
+
+            if ($fieldConfig->getIblockId() == $this->iblockId || !$fieldConfig->getIblockId()) {
+                if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
+                    $filter->between($property, $userFilterValue[0], $userFilterValue[1]);
+                } elseif (is_array($userFilterValue)) {
+                    $filter->in($property, $userFilterValue);
+                } else {
+                    $filter->eq($property, $userFilterValue);
+                }
             }
         }
 
@@ -148,6 +174,7 @@ class SmartFilter
         foreach ($result as $key => $value) {
             if (isset($value['values']['min']) || isset($value['values']['max'])) {
                 $filterRange = new ConfigFilterRange();
+                $filterRange->setIblockId($value['iblockId']);
                 $filterRange->setCode($value['code']);
                 $filterRange->setName($value['name']);
                 $filterRange->setDisplayType('R');
@@ -158,6 +185,7 @@ class SmartFilter
                 $configFilter->addFilterItem($filterRange);
             } else {
                 $filterList = new ConfigFilterList();
+                $filterList->setIblockId($value['iblockId']);
                 $filterList->setCode($value['code']);
                 $filterList->setName($value['name']);
                 $filterList->setHint($value['hint']);
@@ -475,7 +503,10 @@ class SmartFilter
 
     public function getResultItems()
     {
-        $items = $this->getIBlockItems($this->iblockId);
+        $items = [];
+        foreach ($this->getIBlockItems($this->iblockId) as $PID => $arItem) {
+            $items[$PID] = $arItem;
+        }
 
         if ($this->skuIblockId) {
             foreach ($this->getIBlockItems($this->skuIblockId) as $PID => $arItem) {
@@ -507,7 +538,8 @@ class SmartFilter
             if ($arProperty) {
 
                 $items[$arProperty["ID"]] = array(
-                    "id" => $arProperty["ID"],
+                    "id" => (int)$arProperty["ID"],
+                    "iblockId" => (int)$iblockId,
                     "code" => $arProperty["CODE"],
                     "name" => $arProperty["NAME"],
                     "propertyType" => $arProperty["PROPERTY_TYPE"],
@@ -560,8 +592,8 @@ class SmartFilter
                     $arPrice["NAME_LANG"] = $arPrice["NAME"];
 
                 $items[$arPrice["NAME"]] = [
-                    "id" => $arPrice["ID"],
-                    "code" => $arPrice["NAME"],
+                    "id" => (int)$arPrice["ID"],
+                    "code" => 'CATALOG_PRICE_' . $arPrice["ID"],
                     "name" => $arPrice["NAME_LANG"],
                     "price" => true,
                     "values" => [
