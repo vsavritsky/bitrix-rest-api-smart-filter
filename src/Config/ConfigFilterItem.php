@@ -5,8 +5,9 @@ namespace BitrixRestApiSmartFilter\Config;
 abstract class ConfigFilterItem implements \JsonSerializable
 {
     protected $name;
+    protected $iblockId;
     protected $code;
-    protected $displayType;
+    protected $displayType; 
     protected $propertyType;
     protected $hint;
 
@@ -90,12 +91,29 @@ abstract class ConfigFilterItem implements \JsonSerializable
         $this->hint = $hint;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getIblockId()
+    {
+        return $this->iblockId;
+    }
+
+    /**
+     * @param mixed $iblockId
+     */
+    public function setIblockId($iblockId): void
+    {
+        $this->iblockId = $iblockId;
+    }
+
     public abstract function getValues();
 
     public function jsonSerialize()
     {
         return [
             'code' => $this->getCode(),
+            'iblockId' => $this->getIblockId(),
             'name' => $this->getName(),
             'hint' => $this->getHint(),
             'displayType' => $this->getDisplayType(),
