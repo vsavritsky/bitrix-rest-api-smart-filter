@@ -77,9 +77,9 @@ class SmartFilter
             if ($fieldConfig->getIblockId() == $this->skuIblockId) {
                 if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
                     $skuFilter->between($property, $userFilterValue[0], $userFilterValue[1]);
-                } elseif (is_array($userFilterValue)) {
+                } elseif (is_array($userFilterValue) && count($userFilterValue) > 0) {
                     $skuFilter->in($property, $userFilterValue);
-                } else {
+                } else if ($userFilterValue) {
                     $skuFilter->eq($property, $userFilterValue);
                 }
             }
@@ -95,9 +95,9 @@ class SmartFilter
             if ($fieldConfig->getIblockId() == $this->iblockId || !$fieldConfig->getIblockId()) {
                 if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
                     $filter->between($property, $userFilterValue[0], $userFilterValue[1]);
-                } elseif (is_array($userFilterValue)) {
+                } elseif (is_array($userFilterValue) && count($userFilterValue) > 0) {
                     $filter->in($property, $userFilterValue);
-                } else {
+                } else if ($userFilterValue) {
                     $filter->eq($property, $userFilterValue);
                 }
             }
