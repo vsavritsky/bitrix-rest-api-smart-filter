@@ -5,7 +5,7 @@
     "require": {
         "php": ">=7.4",
         "vsavritsky/bitrix-filter-builder": "^0.0.3",
-        "vsavritsky/bitrix-models": "^0.1.0"
+        "vsavritsky/bitrix-models": "^0.1.4"
     },
     "minimum-stability": "stable",
     "autoload": {

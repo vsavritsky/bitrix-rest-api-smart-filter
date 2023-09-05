@@ -33,10 +33,12 @@ class SmartFilter
     public function __construct($iblockId)
     {
         $this->iblockId = $iblockId;
-        $arCatalog = CCatalogSKU::GetInfoByProductIBlock($this->iblockId);
-        if (!empty($arCatalog)) {
-            $this->skuIblockId = $arCatalog["IBLOCK_ID"];
-            $this->skuPropertyId = $arCatalog["SKU_PROPERTY_ID"];
+        if (class_exists('CCatalogSKU')) {
+            $arCatalog = CCatalogSKU::GetInfoByProductIBlock($this->iblockId);
+            if (!empty($arCatalog)) {
+                $this->skuIblockId = $arCatalog["IBLOCK_ID"];
+                $this->skuPropertyId = $arCatalog["SKU_PROPERTY_ID"];
+            }
         }
         $this->facet = new Facet($this->iblockId);
     }
