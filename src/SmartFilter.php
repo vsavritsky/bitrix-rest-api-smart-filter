@@ -53,6 +53,8 @@ class SmartFilter
         $userFilter = Filter::create();
 
         foreach ($filterData as $property => $value) {
+            $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
+
             if (is_array($value)) {
                 $values = [];
                 foreach ($value as $key => $valueItem) {
@@ -62,22 +64,39 @@ class SmartFilter
                 if (strpos($property, 'CATALOG_PRICE') !== false) {
                     $userFilter->in($property, $values);
                 } else {
-                    $userFilter->in('PROPERTY_' . $property, $values);
+                    if ($fieldConfig->getPropertyType() === 'L') {
+                        $newValues = [];
+                        foreach ($fieldConfig->getValues() as $fieldValue) {
+                            if ($fieldValue['urlId'] === $value) {
+                                $newValues[] = $fieldValue['facetValue'];
+                            }
+                        }
+                        $userFilter->in('PROPERTY_' . $property, $newValues);
+                    } else {
+                        $userFilter->in('PROPERTY_' . $property, $values);
+                    }
+
                 }
             } else {
-                $userFilter->eq('PROPERTY_' . $property, $value);
+                if ($fieldConfig->getPropertyType() === 'L') {
+                    foreach ($fieldConfig->getValues() as $fieldValue) {
+                        if ($fieldValue['urlId'] === $value) {
+                            $userFilter->eq('PROPERTY_' . $property, $fieldValue['facetValue']);
+                        }
+                    }
+                } else {
+                    $userFilter->eq('PROPERTY_' . $property, $value);
+                }
             }
         }
-
 
         $skuFilter = (new Filter())->eq('IBLOCK_ID', $this->skuIblockId);
         $filterResultList = $userFilter->getResult();
 
         foreach ($filterResultList as $property => $userFilterValue) {
             $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
-
             if ($fieldConfig->getIblockId() == $this->skuIblockId) {
-                if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
+                if ($fieldConfig && $fieldConfig->getDisplayType() === 'R') {
                     $skuFilter->between($property, $userFilterValue[0], $userFilterValue[1]);
                 } elseif (is_array($userFilterValue) && count($userFilterValue) > 0) {
                     $skuFilter->in($property, $userFilterValue);
