@@ -64,7 +64,7 @@ class SmartFilter
                 if (strpos($property, 'CATALOG_PRICE') !== false) {
                     $userFilter->in($property, $values);
                 } else {
-                    if ($fieldConfig->getPropertyType() === 'L') {
+                    if (in_array($fieldConfig->getPropertyType(), ['L', 'E'])) {
                         $newValues = [];
                         foreach ($fieldConfig->getValues() as $fieldValue) {
                             if ($fieldValue['urlId'] === $value) {
@@ -78,7 +78,7 @@ class SmartFilter
 
                 }
             } else {
-                if ($fieldConfig->getPropertyType() === 'L') {
+                if (in_array($fieldConfig->getPropertyType(), ['L', 'E'])) {
                     foreach ($fieldConfig->getValues() as $fieldValue) {
                         if ($fieldValue['urlId'] === $value) {
                             $userFilter->eq('PROPERTY_' . $property, $fieldValue['facetValue']);
@@ -189,6 +189,8 @@ class SmartFilter
             }
         }
 
+        $this->predictIBElementFetch($elementDictionary);
+        $this->predictIBSectionFetch($sectionDictionary);
         $this->processProperties($result, $tmpProperty, $dictionaryID, $directoryPredict);
 
         $configFilter = new ConfigFilter();
@@ -625,6 +627,29 @@ class SmartFilter
             }
         }
         return $items;
+    }
+
+    public function predictIBSectionFetch($id = array())
+    {
+        if (!is_array($id) || empty($id))
+        {
+            return;
+        }
+
+        $arLinkFilter = array (
+            "ID" => $id,
+            "GLOBAL_ACTIVE" => "Y",
+            "CHECK_PERMISSIONS" => "Y",
+        );
+
+        $link = CIBlockSection::GetList(array(), $arLinkFilter, false, array("ID","IBLOCK_ID","NAME","LEFT_MARGIN","DEPTH_LEVEL","CODE"));
+        while ($sec = $link->Fetch())
+        {
+            $this->cache['G'][$sec['ID']] = $sec;
+            $this->cache['G'][$sec['ID']]['DEPTH_NAME'] = str_repeat(".", $sec["DEPTH_LEVEL"]).$sec["NAME"];
+        }
+        unset($sec);
+        unset($link);
     }
 
     public function fillItemPrices(&$resultItem, $arElement)
