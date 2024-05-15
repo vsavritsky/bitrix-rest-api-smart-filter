@@ -67,7 +67,7 @@ class SmartFilter
                     if (in_array($fieldConfig->getPropertyType(), ['L', 'E'])) {
                         $newValues = [];
                         foreach ($fieldConfig->getValues() as $fieldValue) {
-                            if ($fieldValue['urlId'] === $value) {
+                            if ($fieldValue['urlId'] === $value || $fieldValue['value'] === $value) {
                                 $newValues[] = $fieldValue['facetValue'];
                             }
                         }
@@ -80,7 +80,7 @@ class SmartFilter
             } else {
                 if (in_array($fieldConfig->getPropertyType(), ['L', 'E'])) {
                     foreach ($fieldConfig->getValues() as $fieldValue) {
-                        if ($fieldValue['urlId'] === $value) {
+                        if ($fieldValue['urlId'] === $value || $fieldValue['value'] === $value) {
                             $userFilter->eq('PROPERTY_' . $property, $fieldValue['facetValue']);
                         }
                     }
