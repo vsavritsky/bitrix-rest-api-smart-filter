@@ -277,16 +277,27 @@ class SmartFilter
                     $resultItem[$PID]["values"][$addedKey]["facetValue"] = $row["VALUE"];
                     $resultItem[$PID]["values"][$addedKey]["count"] = $row["ELEMENT_COUNT"];
                 }
+
+                if ($resultItem[$PID]["values"][$addedKey]["value"] == '') {
+                    unset($resultItem[$PID]["values"][$addedKey]);
+                }
             } else {
                 $addedKey = $this->fillItemValues($resultItem[$PID], $lookupDictionary[$row["VALUE"]], true);
                 if (!$addedKey) {
                     $addedKey = $this->fillItemValues($resultItem[$PID], $row["VALUE"], true);
                 }
+
                 if ($addedKey <> '') {
                     $resultItem[$PID]["values"][$addedKey]["facetValue"] = $row["VALUE"];
                     $resultItem[$PID]["values"][$addedKey]["count"] = $row["ELEMENT_COUNT"];
                 }
+
+                if ($resultItem[$PID]["values"][$addedKey]["value"] == '') {
+                    unset($resultItem[$PID]["values"][$addedKey]);
+                }
             }
+
+
         }
 
         foreach ($resultItem as &$item) {
