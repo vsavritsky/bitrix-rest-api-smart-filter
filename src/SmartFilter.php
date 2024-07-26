@@ -381,10 +381,6 @@ class SmartFilter
         $arUserType = [];
         if ($PROPERTY_USER_TYPE != "") {
             $arUserType = CIBlockProperty::GetUserType($PROPERTY_USER_TYPE);
-            if (isset($arUserType["GetExtendedValue"]))
-                $PROPERTY_TYPE = "Ux";
-            elseif (isset($arUserType["GetPublicViewHTML"]))
-                $PROPERTY_TYPE = "U";
         }
 
         if ($PROPERTY_USER_TYPE === "DateTime") {
