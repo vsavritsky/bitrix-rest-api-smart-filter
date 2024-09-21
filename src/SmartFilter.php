@@ -202,7 +202,7 @@ class SmartFilter
                 $filterRange->setName($value['name']);
                 $filterRange->setDisplayType('R');
                 $filterRange->setPropertyType($value['propertyType']);
-                $filterRange->setHint($value['hint']);
+                $filterRange->setHint(htmlspecialchars_decode($value['hint']));
                 $filterRange->setMin((float)$value['values']['min']);
                 $filterRange->setMax((float)$value['values']['max']);
                 $configFilter->addFilterItem($filterRange);
@@ -211,7 +211,7 @@ class SmartFilter
                 $filterList->setIblockId($value['iblockId']);
                 $filterList->setCode($value['code']);
                 $filterList->setName($value['name']);
-                $filterList->setHint($value['hint']);
+                $filterList->setHint(htmlspecialchars_decode($value['hint']));
                 $filterList->setPropertyType($value['propertyType']);
                 $filterList->setDisplayType($value['displayType']);
                 $filterList->setValues(array_values($value['values']));
@@ -577,7 +577,7 @@ class SmartFilter
                     "userType" => $arProperty["USER_TYPE"],
                     "userTypeSettings" => $arProperty["USER_TYPE_SETTINGS"],
                     "displayExpand" => $arLink["DISPLAY_EXPANDED"],
-                    "hint" => $arLink["FILTER_HINT"],
+                    "hint" => htmlspecialchars_decode($arLink["FILTER_HINT"]),
                     "values" => [],
                 );
 
