@@ -424,10 +424,7 @@ class SmartFilter
 
                 $value = $this->cache[$PROPERTY_TYPE][$key]["NAME"];
                 $sort = $this->cache[$PROPERTY_TYPE][$key]["SORT"];
-                if ($this->cache[$PROPERTY_TYPE][$key]["CODE"])
-                    $urlId = toLower($this->cache[$PROPERTY_TYPE][$key]["CODE"]);
-                else
-                    $urlId = toLower($value);
+                $urlId = (int)$this->cache[$PROPERTY_TYPE][$key]["ID"];
                 break;
             case "G":
                 if (!isset($this->cache[$PROPERTY_TYPE][$key])) {
