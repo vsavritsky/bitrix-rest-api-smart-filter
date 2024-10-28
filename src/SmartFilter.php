@@ -483,6 +483,26 @@ class SmartFilter
                     return null;
                 }
                 break;
+            case "S":
+                $value = $key;
+                $sort = 0;
+                $urlId = toLower($value);
+
+                if (isset($resultItem['userTypeSettings']['TABLE_NAME'])) {
+                    $data = $this->getElementByXmlID($resultItem['userTypeSettings']['TABLE_NAME'], $urlId);
+
+                    if (isset($data['UF_NAME'])) {
+                        $value = $data['UF_NAME'];
+                    }
+                } elseif ($resultItem['userType'] == 'UserID') {
+                    $rsUser = \CUser::GetByID($value);
+                    $arUser = $rsUser->Fetch();
+
+                    if ($arUser) {
+                        $value = sprintf('%s %s', $arUser['NAME'], $arUser['LAST_NAME']);
+                    }
+                }
+                break;
             default:
                 $value = $key;
                 $sort = 0;
@@ -505,6 +525,25 @@ class SmartFilter
         }
 
         return $htmlKey;
+    }
+
+    protected function getElementByXmlID($hlblockName, $xmlId) {
+        $hlblock = \Bitrix\Highloadblock\HighloadBlockTable::getList([
+            'filter' => ['=TABLE_NAME' => $hlblockName]
+        ])->fetch();
+
+        $entity = \Bitrix\Highloadblock\HighloadBlockTable::compileEntity($hlblock);
+        $entityСlass = $entity->getDataClass();
+
+        $rsItems = $entityСlass::getList([
+            'filter' => ['=UF_XML_ID' => $xmlId],
+        ]);
+
+        if ($arItem = $rsItems->fetch()){
+            return $arItem;
+        }
+
+        return null;
     }
 
     public function predictIBElementFetch($id = [])
