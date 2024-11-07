@@ -27,6 +27,7 @@ class SmartFilter
     protected $skuPropertyId;
 
     protected $sectionId;
+    protected $withPrice = true;
 
     protected $SAFE_FILTER_NAME = 'filter';
 
@@ -41,6 +42,11 @@ class SmartFilter
             }
         }
         $this->facet = new Facet($this->iblockId);
+    }
+    
+    public function setWithPrice(bool $withPrice)
+    {
+        $this->withPrice = $withPrice;
     }
 
     public function convertFilter($sectionId, $filterData, Filter $filter = null): Filter
@@ -580,8 +586,10 @@ class SmartFilter
             }
         }
 
-        foreach ($this->getPriceItems() as $PID => $arItem) {
-            $items[$PID] = $arItem;
+        if ($this->withPrice) {
+            foreach ($this->getPriceItems() as $PID => $arItem) {
+                $items[$PID] = $arItem;
+            }
         }
 
         return $items;
