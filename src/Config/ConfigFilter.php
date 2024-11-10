@@ -6,9 +6,39 @@ class ConfigFilter implements \JsonSerializable
 {
     protected $config = [];
 
-    public function addFilterItem(ConfigFilterItem $configFilterItem)
+    public function getConfig(): array
     {
-        $this->config[] = $configFilterItem;
+        return $this->config;
+    }
+
+    public function addFilterItem(ConfigFilterItem $configFilterItem): void
+    {
+        $this->setFilterItem($configFilterItem);
+    }
+
+    public function setFilterItem(ConfigFilterItem $configFilterItem): void
+    {
+        $found = false;
+
+        foreach ($this->config as $key => $item) {
+            if ($configFilterItem->getCode() == $item->getCode()) {
+                $found = true;
+                $this->config[$key] = $configFilterItem;
+            }
+        }
+
+        if (!$found) {
+            $this->config[] = $configFilterItem;
+        }
+    }
+
+    public function removeByCode(string $code): void
+    {
+        foreach ($this->config as $key => $item) {
+            if ($code == $item->getCode()) {
+                 unset($this->config[$key]);
+            }
+        }
     }
 
     public function getConfigFilterItemByCode($code): ?ConfigFilterItem
