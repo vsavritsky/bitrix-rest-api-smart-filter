@@ -74,7 +74,11 @@ class SmartFilter
                         $newValues = [];
                         foreach ($fieldConfig->getValues() as $fieldValue) {
                             if ($fieldValue['urlId'] === $value || $fieldValue['value'] === $value) {
-                                $newValues[] = $fieldValue['facetValue'];
+                                if ($fieldConfig->getPropertyType() == 'E') {
+                                    $newValues[] = $fieldValue['urlId'];
+                                } else {
+                                    $newValues[] = $fieldValue['facetValue'];
+                                }
                             }
                         }
                         $userFilter->in('PROPERTY_' . $property, $newValues);
@@ -87,7 +91,11 @@ class SmartFilter
                 if (in_array($fieldConfig->getPropertyType(), ['L', 'E'])) {
                     foreach ($fieldConfig->getValues() as $fieldValue) {
                         if ($fieldValue['urlId'] === $value || $fieldValue['value'] === $value) {
-                            $userFilter->eq('PROPERTY_' . $property, $fieldValue['facetValue']);
+                            if ($fieldConfig->getPropertyType() == 'E') {
+                                $userFilter->eq('PROPERTY_' . $property, $fieldValue['urlId']);
+                            } else {
+                                $userFilter->eq('PROPERTY_' . $property, $fieldValue['facetValue']);
+                            }
                         }
                     }
                 } else {
