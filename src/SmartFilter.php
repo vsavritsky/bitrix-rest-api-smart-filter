@@ -278,7 +278,18 @@ class SmartFilter
         foreach ($elements as $row) {
             $PID = $row['PID'];
 
-            if ($resultItem[$PID]["propertyType"] == "N") {
+            if ($resultItem[$PID]["propertyType"] == "L") {
+				$addedKey = $this->fillItemValues($resultItem[$PID], $row["VALUE"], true);
+				
+                if ($addedKey <> '') {
+                    $resultItem[$PID]["values"][$addedKey]["facetValue"] = $row["VALUE"];
+                    $resultItem[$PID]["values"][$addedKey]["count"] = $row["ELEMENT_COUNT"];
+                }
+				
+                if ($resultItem[$PID]["values"][$addedKey]["value"] == '') {
+                    unset($resultItem[$PID]["values"][$addedKey]);
+                }
+			} elseif ($resultItem[$PID]["propertyType"] == "N") {
                 $this->fillItemValues($resultItem[$PID], $row["MIN_VALUE_NUM"]);
                 $this->fillItemValues($resultItem[$PID], $row["MAX_VALUE_NUM"]);
             } elseif ($resultItem[$PID]["displayType"] == "U") {
