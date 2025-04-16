@@ -58,6 +58,7 @@ class SmartFilter
         $configFilter = $this->getConfigFilter($sectionId, $filter);
         $userFilter = Filter::create();
 
+
         foreach ($filterData as $property => $value) {
             $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
 
@@ -73,11 +74,13 @@ class SmartFilter
                     if (in_array($fieldConfig->getPropertyType(), ['L', 'E'])) {
                         $newValues = [];
                         foreach ($fieldConfig->getValues() as $fieldValue) {
-                            if ($fieldValue['urlId'] === $value || $fieldValue['value'] === $value) {
-                                if ($fieldConfig->getPropertyType() == 'E') {
-                                    $newValues[] = $fieldValue['urlId'];
-                                } else {
-                                    $newValues[] = $fieldValue['facetValue'];
+                            foreach ($values as $valueItem) {
+                                if ($fieldValue['urlId'] === $valueItem || $fieldValue['value'] === $valueItem) {
+                                    if ($fieldConfig->getPropertyType() == 'E') {
+                                        $newValues[] = $fieldValue['urlId'];
+                                    } else {
+                                        $newValues[] = $fieldValue['facetValue'];
+                                    }
                                 }
                             }
                         }
