@@ -43,7 +43,7 @@ class SmartFilter
         }
         $this->facet = new Facet($this->iblockId);
     }
-    
+
     public function setWithPrice(bool $withPrice)
     {
         $this->withPrice = $withPrice;
@@ -75,7 +75,7 @@ class SmartFilter
                         $newValues = [];
                         foreach ($fieldConfig->getValues() as $fieldValue) {
                             foreach ($values as $valueItem) {
-                                if ($fieldValue['urlId'] === $valueItem || $fieldValue['value'] === $valueItem) {
+                                if ($fieldValue['urlId'] == $valueItem || $fieldValue['value'] == $valueItem) {
                                     if ($fieldConfig->getPropertyType() == 'E') {
                                         $newValues[] = $fieldValue['urlId'];
                                     } else {
@@ -144,7 +144,7 @@ class SmartFilter
         return $filter;
     }
 
-    public function getConfigFilter($sectionId, Filter $filter): ConfigFilter
+    public function getConfigFilter($sectionId, Filter $filter, $filterData = null): ConfigFilter
     {
         $prices = CIBlockPriceTools::GetCatalogPrices($this->iblockId, ['BASE']);
         $this->facet->setPrices($prices);
@@ -222,6 +222,16 @@ class SmartFilter
                 $filterRange->setHint(htmlspecialchars_decode($value['hint']));
                 $filterRange->setMin((float)$value['values']['min']);
                 $filterRange->setMax((float)$value['values']['max']);
+
+                if ($filterData && isset($filterData[$value['code']])) {
+                    if ($filterData[$value['code']][0]) {
+                        $filterRange->setValueMin($filterData[$value['code']][0]);
+                    }
+                    if ($filterData[$value['code']][1]) {
+                        $filterRange->setValueMax($filterData[$value['code']][1]);
+                    }
+                }
+
                 $configFilter->addFilterItem($filterRange);
             } else {
                 $filterList = new ConfigFilterList();
@@ -231,6 +241,19 @@ class SmartFilter
                 $filterList->setHint(htmlspecialchars_decode($value['hint']));
                 $filterList->setPropertyType($value['propertyType']);
                 $filterList->setDisplayType($value['displayType']);
+
+                foreach ($value['values'] as $key => &$itemValue) {
+                    $isChecked = false;
+                    if ($filterData && isset($filterData[$value['code']])) {
+                        foreach ($filterData[$value['code']] as $filterDatum) {
+                            if ($itemValue['urlId'] == $filterDatum) {
+                                $isChecked = true;
+                            }
+                        }
+                    }
+                    $itemValue['checked'] = $isChecked;
+                }
+
                 $filterList->setValues(array_values($value['values']));
                 $configFilter->addFilterItem($filterList);
             }
@@ -282,17 +305,17 @@ class SmartFilter
             $PID = $row['PID'];
 
             if ($resultItem[$PID]["propertyType"] == "L") {
-				$addedKey = $this->fillItemValues($resultItem[$PID], $row["VALUE"], true);
-				
+                $addedKey = $this->fillItemValues($resultItem[$PID], $row["VALUE"], true);
+
                 if ($addedKey <> '') {
                     $resultItem[$PID]["values"][$addedKey]["facetValue"] = $row["VALUE"];
                     $resultItem[$PID]["values"][$addedKey]["count"] = $row["ELEMENT_COUNT"];
                 }
-				
+
                 if ($resultItem[$PID]["values"][$addedKey]["value"] == '') {
                     unset($resultItem[$PID]["values"][$addedKey]);
                 }
-			} elseif ($resultItem[$PID]["propertyType"] == "N") {
+            } elseif ($resultItem[$PID]["propertyType"] == "N") {
                 $this->fillItemValues($resultItem[$PID], $row["MIN_VALUE_NUM"]);
                 $this->fillItemValues($resultItem[$PID], $row["MAX_VALUE_NUM"]);
             } elseif ($resultItem[$PID]["displayType"] == "U") {
@@ -555,7 +578,8 @@ class SmartFilter
         return $htmlKey;
     }
 
-    protected function getElementByXmlID($hlblockName, $xmlId) {
+    protected function getElementByXmlID($hlblockName, $xmlId)
+    {
         $hlblock = \Bitrix\Highloadblock\HighloadBlockTable::getList([
             'filter' => ['=TABLE_NAME' => $hlblockName]
         ])->fetch();
@@ -567,7 +591,7 @@ class SmartFilter
             'filter' => ['=UF_XML_ID' => $xmlId],
         ]);
 
-        if ($arItem = $rsItems->fetch()){
+        if ($arItem = $rsItems->fetch()) {
             return $arItem;
         }
 
@@ -704,22 +728,20 @@ class SmartFilter
 
     public function predictIBSectionFetch($id = array())
     {
-        if (!is_array($id) || empty($id))
-        {
+        if (!is_array($id) || empty($id)) {
             return;
         }
 
-        $arLinkFilter = array (
+        $arLinkFilter = array(
             "ID" => $id,
             "GLOBAL_ACTIVE" => "Y",
             "CHECK_PERMISSIONS" => "Y",
         );
 
-        $link = CIBlockSection::GetList(array(), $arLinkFilter, false, array("ID","IBLOCK_ID","NAME","LEFT_MARGIN","DEPTH_LEVEL","CODE"));
-        while ($sec = $link->Fetch())
-        {
+        $link = CIBlockSection::GetList(array(), $arLinkFilter, false, array("ID", "IBLOCK_ID", "NAME", "LEFT_MARGIN", "DEPTH_LEVEL", "CODE"));
+        while ($sec = $link->Fetch()) {
             $this->cache['G'][$sec['ID']] = $sec;
-            $this->cache['G'][$sec['ID']]['DEPTH_NAME'] = str_repeat(".", $sec["DEPTH_LEVEL"]).$sec["NAME"];
+            $this->cache['G'][$sec['ID']]['DEPTH_NAME'] = str_repeat(".", $sec["DEPTH_LEVEL"]) . $sec["NAME"];
         }
         unset($sec);
         unset($link);

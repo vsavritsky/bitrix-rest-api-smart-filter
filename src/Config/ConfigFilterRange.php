@@ -7,6 +7,9 @@ class ConfigFilterRange extends ConfigFilterItem
     protected $min = null;
     protected $max = null;
 
+    protected $valueMin = null;
+    protected $valueMax = null;
+
     /**
      * @return null
      */
@@ -39,11 +42,33 @@ class ConfigFilterRange extends ConfigFilterItem
         $this->max = $max;
     }
 
+    public function getValueMin(): null
+    {
+        return $this->valueMin;
+    }
+
+    public function setValueMin($valueMin): void
+    {
+        $this->valueMin = (float)$valueMin;
+    }
+
+    public function getValueMax(): null
+    {
+        return $this->valueMax;
+    }
+
+    public function setValueMax($valueMax): void
+    {
+        $this->valueMax = (float)$valueMax;
+    }
+
     public function getValues()
     {
         return [
             'min' => $this->min,
-            'max' => $this->max
+            'max' => $this->max,
+            'valueMin' => $this->valueMin,
+            'valueMax' => $this->valueMax
         ];
     }
 }
