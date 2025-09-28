@@ -16,6 +16,7 @@ use CIBlockProperty;
 use CIBlockPropertyEnum;
 use CIBlockSectionPropertyLink;
 use CCatalogSKU;
+use CIBlockSection;
 
 class SmartFilter
 {
