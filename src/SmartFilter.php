@@ -59,47 +59,52 @@ class SmartFilter
         $configFilter = $this->getConfigFilter($sectionId, $filter);
         $userFilter = Filter::create();
 
+        $minPrice = $maxPrice = null;
+        $priceField = $this->getPriceField('BASE');
 
         foreach ($filterData as $property => $value) {
+            if (strpos($property, 'CATALOG_PRICE') !== false) {
+                if (is_array($value) && count($value) >= 2) {
+                    $minPrice = floatval($value[0]);
+                    $maxPrice = floatval($value[1]);
+                } elseif (is_array($value) && count($value) == 1) {
+                    $minPrice = floatval($value[0]);
+                } elseif (is_string($value) || is_numeric($value)) {
+                    $minPrice = $maxPrice = floatval($value);
+                }
+                continue;
+            }
+
             $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
 
             if (is_array($value)) {
-                $values = [];
-                foreach ($value as $key => $valueItem) {
-                    $values[] = $valueItem;
-                }
+                $values = array_values($value);
 
-                if (strpos($property, 'CATALOG_PRICE') !== false) {
-                    $userFilter->in($property, $values);
-                } else {
-                    if (in_array($fieldConfig->getPropertyType(), ['L', 'E'])) {
-                        $newValues = [];
-                        foreach ($fieldConfig->getValues() as $fieldValue) {
-                            foreach ($values as $valueItem) {
-                                if ($fieldValue['urlId'] == $valueItem || $fieldValue['value'] == $valueItem) {
-                                    if ($fieldConfig->getPropertyType() == 'E') {
-                                        $newValues[] = $fieldValue['urlId'];
-                                    } else {
-                                        $newValues[] = $fieldValue['facetValue'];
-                                    }
-                                }
+                if (in_array($fieldConfig->getPropertyType(), ['L', 'E'])) {
+                    $newValues = [];
+                    foreach ($fieldConfig->getValues() as $fieldValue) {
+                        foreach ($values as $valueItem) {
+                            if ($fieldValue['urlId'] == $valueItem || $fieldValue['value'] == $valueItem) {
+                                $newValues[] = $fieldConfig->getPropertyType() == 'E'
+                                    ? $fieldValue['urlId']
+                                    : $fieldValue['facetValue'];
                             }
                         }
-                        $userFilter->in('PROPERTY_' . $property, $newValues);
-                    } else {
-                        $userFilter->in('PROPERTY_' . $property, $values);
                     }
-
+                    $userFilter->in('PROPERTY_' . $property, $newValues);
+                } else {
+                    $userFilter->in('PROPERTY_' . $property, $values);
                 }
             } else {
                 if (in_array($fieldConfig->getPropertyType(), ['L', 'E'])) {
                     foreach ($fieldConfig->getValues() as $fieldValue) {
                         if ($fieldValue['urlId'] === $value || $fieldValue['value'] === $value) {
-                            if ($fieldConfig->getPropertyType() == 'E') {
-                                $userFilter->eq('PROPERTY_' . $property, $fieldValue['urlId']);
-                            } else {
-                                $userFilter->eq('PROPERTY_' . $property, $fieldValue['facetValue']);
-                            }
+                            $userFilter->eq(
+                                'PROPERTY_' . $property,
+                                $fieldConfig->getPropertyType() == 'E'
+                                    ? $fieldValue['urlId']
+                                    : $fieldValue['facetValue']
+                            );
                         }
                     }
                 } else {
@@ -109,34 +114,59 @@ class SmartFilter
         }
 
         $skuFilter = (new Filter())->eq('IBLOCK_ID', $this->skuIblockId);
-        $filterResultList = $userFilter->getResult();
-
-        foreach ($filterResultList as $property => $userFilterValue) {
+        foreach ($userFilter->getResult() as $property => $userFilterValue) {
             $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
-            if ($fieldConfig->getIblockId() == $this->skuIblockId) {
-                if ($fieldConfig && $fieldConfig->getDisplayType() === 'R') {
+            if ($fieldConfig && $fieldConfig->getIblockId() == $this->skuIblockId) {
+                if ($fieldConfig->getDisplayType() === 'R') {
                     $skuFilter->between($property, $userFilterValue[0], $userFilterValue[1]);
-                } elseif (is_array($userFilterValue) && count($userFilterValue) > 0) {
+                } elseif (is_array($userFilterValue)) {
                     $skuFilter->in($property, $userFilterValue);
-                } else if ($userFilterValue) {
+                } else {
                     $skuFilter->eq($property, $userFilterValue);
                 }
             }
         }
 
-        if (count($skuFilter->getResult()) > 1) {
-            $filter->eq('ID', CIBlockElement::SubQuery('PROPERTY_CML2_LINK', $skuFilter->getResult()));
+        if ($minPrice !== null || $maxPrice !== null) {
+            if ($minPrice !== null && $maxPrice !== null) {
+                $skuFilter->between($priceField, $minPrice, $maxPrice);
+            } elseif ($minPrice !== null) {
+                $skuFilter->gte($priceField, $minPrice);
+            }
         }
 
-        foreach ($filterResultList as $property => $userFilterValue) {
-            $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
+        $skuConditions = $skuFilter->getResult();
 
-            if ($fieldConfig->getIblockId() == $this->iblockId || !$fieldConfig->getIblockId()) {
-                if ($fieldConfig && $fieldConfig->getDisplayType() == 'R') {
+        $priceOrFilter = Filter::create()->setFilterLogic('OR');
+
+        if (!empty($skuConditions)) {
+            $priceOrFilter->addSubFilter(
+                Filter::create()->eq('ID', \CIBlockElement::SubQuery('PROPERTY_CML2_LINK', $skuConditions))
+            );
+        }
+
+        if ($minPrice !== null || $maxPrice !== null) {
+            $priceDirectFilter = Filter::create();
+            if ($minPrice !== null && $maxPrice !== null) {
+                $priceDirectFilter->between($priceField, $minPrice, $maxPrice);
+            } elseif ($minPrice !== null) {
+                $priceDirectFilter->gte($priceField, $minPrice);
+            }
+            $priceOrFilter->addSubFilter($priceDirectFilter);
+        }
+
+        if (!empty($priceOrFilter->getResult())) {
+            $filter->addSubFilter($priceOrFilter);
+        }
+
+        foreach ($userFilter->getResult() as $property => $userFilterValue) {
+            $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
+            if ($fieldConfig && $fieldConfig->getIblockId() == $this->iblockId) {
+                if ($fieldConfig->getDisplayType() === 'R') {
                     $filter->between($property, $userFilterValue[0], $userFilterValue[1]);
-                } elseif (is_array($userFilterValue) && count($userFilterValue) > 0) {
+                } elseif (is_array($userFilterValue)) {
                     $filter->in($property, $userFilterValue);
-                } else if ($userFilterValue) {
+                } else {
                     $filter->eq($property, $userFilterValue);
                 }
             }
@@ -144,6 +174,115 @@ class SmartFilter
 
         return $filter;
     }
+
+    public function normalizePriceFilter($priceValues)
+    {
+        if (is_array($priceValues)) {
+            if (count($priceValues) >= 2) {
+                return [floatval($priceValues[0]), floatval($priceValues[1])];
+            }
+        } elseif (is_string($priceValues)) {
+            if (strpos($priceValues, '-') !== false) {
+                $parts = explode('-', $priceValues);
+                if (count($parts) >= 2) {
+                    return [floatval($parts[0]), floatval($parts[1])];
+                }
+            }
+        }
+
+        return [0, 0];
+    }
+
+    public function getFilteredSkuIds($sectionId, $filterData): array
+    {
+        $skuFilter = (new Filter())->eq('IBLOCK_ID', $this->skuIblockId);
+        $configFilter = $this->getConfigFilter($sectionId, Filter::create());
+
+        foreach ($filterData as $property => $value) {
+            $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
+
+            if (!$fieldConfig || $fieldConfig->getIblockId() != $this->skuIblockId) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                if ($fieldConfig->getDisplayType() === 'R' && count($value) >= 2) {
+                    $skuFilter->between('PROPERTY_' . $property, $value[0], $value[1]);
+                } else {
+                    $skuFilter->in('PROPERTY_' . $property, $value);
+                }
+            } else {
+                $skuFilter->eq('PROPERTY_' . $property, $value);
+            }
+        }
+
+        foreach ($filterData as $property => $value) {
+            if (strpos($property, 'CATALOG_PRICE') !== false) {
+                if (is_array($value) && count($value) >= 2) {
+                    $minPrice = floatval($value[0]);
+                    $maxPrice = floatval($value[1]);
+                    $skuFilter->between($property, $minPrice, $maxPrice);
+                } elseif (is_array($value) && count($value) == 1) {
+                    $minPrice = floatval($value[0]);
+                    $skuFilter->gte($property, $minPrice);
+                } elseif (is_string($value) || is_numeric($value)) {
+                    $price = floatval($value);
+                    if ($price > 0) {
+                        $skuFilter->eq($property, $price);
+                    }
+                }
+            }
+        }
+
+        $skuIds = [];
+        $rs = \CIBlockElement::GetList(
+            [],
+            $skuFilter->getResult(),
+            false,
+            false,
+            ['ID']
+        );
+
+        while ($element = $rs->Fetch()) {
+            $skuIds[] = $element['ID'];
+        }
+
+        return $skuIds;
+    }
+
+    public function getPriceField(string $priceTypeCode = 'BASE'): string
+    {
+        static $priceMap = [];
+
+        if (isset($priceMap[$priceTypeCode])) {
+            return $priceMap[$priceTypeCode];
+        }
+
+        $priceField = 'CATALOG_PRICE_1';
+
+        $rs = \CCatalogGroup::GetList(
+            ['ID' => 'ASC'],
+            ['BASE' => 'Y']
+        );
+
+        if ($ar = $rs->Fetch()) {
+            $priceField = 'CATALOG_PRICE_' . $ar['ID'];
+        }
+
+        if ($priceTypeCode !== 'BASE') {
+            $rs2 = \CCatalogGroup::GetList(
+                ['ID' => 'ASC'],
+                ['NAME' => $priceTypeCode]
+            );
+            if ($ar2 = $rs2->Fetch()) {
+                $priceField = 'CATALOG_PRICE_' . $ar2['ID'];
+            }
+        }
+
+        $priceMap[$priceTypeCode] = $priceField;
+        return $priceField;
+    }
+
 
     public function getConfigFilter($sectionId, Filter $filter, $filterData = null): ConfigFilter
     {
@@ -348,8 +487,6 @@ class SmartFilter
                     unset($resultItem[$PID]["values"][$addedKey]);
                 }
             }
-
-
         }
 
         foreach ($resultItem as &$item) {
@@ -391,7 +528,6 @@ class SmartFilter
 
             if (!isset($resultItem["values"]["min"])) {
                 $resultItem["values"]["min"] = preg_replace("/\\.0+\$/", "", $key);
-
             } elseif (!isset($resultItem["values"]["max"])) {
                 $resultItem["values"]["max"] = preg_replace("/\\.0+\$/", "", $key);
             }
