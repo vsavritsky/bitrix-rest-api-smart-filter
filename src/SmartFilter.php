@@ -28,7 +28,9 @@ class SmartFilter
     protected $skuPropertyId;
 
     protected $sectionId;
-    protected $withPrice = true;
+    protected bool $withPrice = true;
+
+    protected string $priceType = 'BASE';
 
     protected $SAFE_FILTER_NAME = 'filter';
 
@@ -43,6 +45,11 @@ class SmartFilter
             }
         }
         $this->facet = new Facet($this->iblockId);
+    }
+
+    public function setPriceType(string $type): void
+    {
+        $this->priceType = $type;
     }
 
     public function setWithPrice(bool $withPrice)
@@ -60,7 +67,7 @@ class SmartFilter
         $userFilter = Filter::create();
 
         $minPrice = $maxPrice = null;
-        $priceField = $this->getPriceField('BASE');
+        $priceField = $this->getPriceField($this->priceType);
 
         foreach ($filterData as $property => $value) {
             if (strpos($property, 'CATALOG_PRICE') !== false) {
@@ -286,7 +293,7 @@ class SmartFilter
 
     public function getConfigFilter($sectionId, Filter $filter, $filterData = null): ConfigFilter
     {
-        $prices = CIBlockPriceTools::GetCatalogPrices($this->iblockId, ['BASE']);
+        $prices = CIBlockPriceTools::GetCatalogPrices($this->iblockId, [$this->priceType]);
         $this->facet->setPrices($prices);
         $this->facet->setSectionId($sectionId);
 
@@ -837,7 +844,7 @@ class SmartFilter
 
         $rsPrice = CCatalogGroup::GetList(
             array('SORT' => 'ASC', 'ID' => 'ASC'),
-            array('=NAME' => 'BASE'),
+            array('=NAME' => $this->priceType),
             false,
             false,
             array('ID', 'NAME', 'NAME_LANG', 'CAN_ACCESS', 'CAN_BUY')
