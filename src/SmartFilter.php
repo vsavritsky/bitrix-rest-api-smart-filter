@@ -67,7 +67,9 @@ class SmartFilter
         $userFilter = Filter::create();
 
         $minPrice = $maxPrice = null;
-        $priceField = $this->getPriceField($this->priceType);
+        if ($this->withPrice) {
+            $priceField = $this->getPriceField($this->priceType);
+        }
 
         foreach ($filterData as $property => $value) {
             if (strpos($property, 'CATALOG_PRICE') !== false) {
@@ -83,6 +85,10 @@ class SmartFilter
             }
 
             $fieldConfig = $configFilter->getConfigFilterItemByCode(str_replace('PROPERTY_', '', $property));
+
+            if (!$fieldConfig) {
+                continue;
+            }
 
             if (is_array($value)) {
                 $values = array_values($value);
