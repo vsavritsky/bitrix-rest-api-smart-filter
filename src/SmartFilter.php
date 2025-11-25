@@ -44,6 +44,9 @@ class SmartFilter
                 $this->skuPropertyId = $arCatalog["SKU_PROPERTY_ID"];
             }
         }
+        if (!class_exists('CCatalogGroup')) {
+            $this->withPrice = false;
+        }
         $this->facet = new Facet($this->iblockId);
     }
 
